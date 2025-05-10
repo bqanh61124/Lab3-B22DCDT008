@@ -1,27 +1,44 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { AppBar, Toolbar, Typography } from "@mui/material";
 import { useLocation } from "react-router-dom";
-import models from "../../modelData/models";
+import fetchModel from "../../lib/fetchModelData";
 
 function TopBar() {
   const location = useLocation();
-  let title = "";
+  const [title, setTitle] = useState("");
 
-  if (location.pathname.startsWith("/users/")) {
-    const userId = location.pathname.split("/")[2];
-    const user = models.userModel(userId);
-    if (user) {
-      title = `${user.first_name} ${user.last_name}`;
-    }
-  } else if (location.pathname.startsWith("/photos/")) {
-    const userId = location.pathname.split("/")[2];
-    const user = models.userModel(userId);
-    if (user) {
-      title = `Photos of ${user.first_name} ${user.last_name}`;
-    }
-  } else if (location.pathname === "/users") {
-    title = "User List";
-  }
+  useEffect(() => {
+    let isMounted = true;
+    const fetchTitle = async () => {
+      if (location.pathname.startsWith("/users/")) {
+        const userId = location.pathname.split("/")[2];
+        try {
+          const user = await fetchModel(`/api/user/${userId}`);
+          if (isMounted && user) {
+            setTitle(`${user.first_name} ${user.last_name}`);
+          }
+        } catch {
+          if (isMounted) setTitle("");
+        }
+      } else if (location.pathname.startsWith("/photos/")) {
+        const userId = location.pathname.split("/")[2];
+        try {
+          const user = await fetchModel(`/api/user/${userId}`);
+          if (isMounted && user) {
+            setTitle(`Photos of ${user.first_name} ${user.last_name}`);
+          }
+        } catch {
+          if (isMounted) setTitle("");
+        }
+      } else if (location.pathname === "/users") {
+        setTitle("User List");
+      } else {
+        setTitle("");
+      }
+    };
+    fetchTitle();
+    return () => { isMounted = false; };
+  }, [location]);
 
   return (
     <AppBar className="topbar-appBar" position="absolute">
